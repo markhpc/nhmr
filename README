@@ -1,0 +1,65 @@
+nhmRender version 0.1 alpha
+(c)2011 Mark Nelson. all rights reserved
+
+This is a very alpha version of nhm's raytracing engine.  There be dragons
+lurking here! This rendering engine was originally based on Jacco Bikker's 
+excellent raytracing tutorial located here:
+
+http://www.flipcode.com/archives/Raytracing_Topics_Techniques-Part_1_Introduction.shtml
+
+Portions of the photon mapping engine are based on Toshiya Hachisuka's smallppm
+engine:
+
+http://graphics.ucsd.edu/~toshiya/smallppm.cpp
+
+BUILDING
+
+This project was developed with the eclipse CDT. Makefiles are present in 
+the Debug and Release directories.  Source code is in the src directory.
+
+Prerequisites:
+
+boost 1.42
+libeigen3-dev
+libsdl1.2-dev
+
+executable can be built by cding into the Release directory and typing "make".
+
+Here's a basic layout of the src directory structure:
+
+common     - Settings, utilities classes, scene class, other misc stuff
+engine     - Raytracing and Photon Mapping engines
+materials  - various materials and surfaces
+photonmaps - various photonmap data structures for near neighbor searches
+primitives - various primitive classes
+
+BUGS
+
+There are many bugs.  I'm sure you will find more.  Specifically the final
+gather step is showing some odd speckling.
+
+EXECUTION
+
+The raytracing engine can be run with several flags to control various
+aspects of the rendering:
+
+-w		The width in pixels of the resulting render.
+-h		The height in pixels of the resulting render.
+-p		The number of photons to shoot into the scene from each light source.
+-r		The initial photon radius.
+-m		The multiplier to apply to the photon size for each iteration.
+-i		Controls how many photon mapping iterations should be performed.
+-f		Specify if the finalGather step should be performed (on by default).
+-s		The number of samples to use for the final gather step.
+
+TODO
+
+- Fix final gather step.
+- Make scene dynamically loadable from file.
+- Implement Russian roulette algorithm for reflection/refraction of photons.
+- Implement refraction of photons and model caustics.
+- Implement polygons.
+- Try combo hashgrid/kd-tree implementation for near-neighbor search.
+- Parallelize the outer loop for multiple iterations.
+- Profiling/Optimization.
+
