@@ -18,8 +18,9 @@ class RayTracingEngine: public Engine {
   virtual double calculateShadow(Primitive& light, Vector3d& intersectionPoint);
   virtual Color3f calculateDiffuse(Primitive& primitive, Primitive& light, Vector3d& intersectionPoint);
   virtual Color3f calculateSpecular(HitPoint& hitPoint, Primitive& light);
-  virtual Color3f calculateReflection(HitPoint& hitPoint, int &depth);
-  virtual void drawPass(HitPoint& hitPoint, Color3f& color, int& depth);
+  virtual Color3f calculateReflection(HitPoint& hitPoint, float rIndexPrev, int depth);
+  Color3f calculateRefraction(HitPoint& hitPoint, float rIndexPrev, int depth);
+  virtual void drawPass(HitPoint& hitPoint, Color3f& color, float rIndexPrev, int depth);
 };
 
 #endif /* RAYTRACINGENGINE_H_ */

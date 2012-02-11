@@ -45,7 +45,7 @@ class Engine {
   Engine(int _width, int _height);
   virtual ~Engine();
   void initRender(Vector3d position, Vector3d target);
-  boost::optional<Primitive&> raytrace(Ray& ray, double depth, double& distance);
+  int raytrace(Ray& ray, int& primId, double& distance);
   virtual Color3f renderPixel(int x, int y);
 };
 

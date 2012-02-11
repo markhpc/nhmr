@@ -18,8 +18,9 @@ class HitPoint {
   Vector3d location;
   Ray ray;
   Primitive& primitive;
+  int hitType;
 
-  HitPoint(Vector3d _location, Ray _ray, Primitive& _primitive);
+  HitPoint(Vector3d _location, Ray _ray, int _hitType, Primitive& _primitive);
   virtual ~HitPoint();
 };
 

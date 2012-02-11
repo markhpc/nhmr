@@ -11,21 +11,19 @@ Engine::Engine(int _width, int _height) :
   scene(), width(_width), height(_height) {
 }
 
-boost::optional<Primitive&> Engine::raytrace(Ray& ray, double depth, double& distance) {
-  boost::optional<Primitive&> primitive;
-
-  if (depth > traceDepth) return primitive;
-
+int Engine::raytrace(Ray& ray, int& primId, double& distance) {
+//  boost::optional<Primitive&> primitive;
+  int ret = Primitive::MISS;
   for (unsigned int i = 0; i < scene.primitives.size(); i++) {
-    Primitive& tempPrimitive = scene.primitives[i];
-    int hit = tempPrimitive.intersect(ray, distance);
-    if (hit == Primitive::INSIDE) {
-//      std::cout << "inside!\n";
-      return boost::optional<Primitive&>();
+    Primitive* tempPrimitive = scene.primitives[i];
+    int hit = tempPrimitive->intersect(ray, distance);
+    if (hit == Primitive::INSIDE || hit == Primitive::HIT) {
+      ret = hit;
+      primId = i;
     }
-    if (hit == Primitive::HIT) primitive = boost::optional<Primitive&>(tempPrimitive);
   }
-  return primitive;
+//  std::cout << "primId: " << primId << "\n";
+  return ret;
 }
 
 void Engine::initRender(Vector3d position, Vector3d target) {
@@ -73,10 +71,12 @@ void Engine::initRender(Vector3d position, Vector3d target) {
       direction.normalize();
       Ray ray(origin + direction*epsilon, direction);
 
-      boost::optional<Primitive&> primitive = raytrace(ray, 1, distance);
-      if (primitive) {
+      int primId = -1;
+      int hitType = raytrace(ray, primId, distance);
+      if (primId != -1) {
+//        std::cout << "x: " << x << ", y: " << y << ", primId: " << primId << "\n";
         Vector3d intersectionPoint = ray.origin + ray.direction * distance;
-        HitPoint hitPoint = HitPoint(intersectionPoint, ray, primitive.get());
+        HitPoint hitPoint = HitPoint(intersectionPoint, ray, hitType, *(scene.primitives[primId]));
         hitPoints.push_back(new boost::optional<HitPoint>(hitPoint));
       } else {
     	hitPoints.push_back(new boost::optional<HitPoint>());

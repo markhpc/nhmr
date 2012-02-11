@@ -23,31 +23,33 @@ void PhotonEngine::createPhotonMap() {
   int hits = 0;
   int tries = 0;
   int offset = rand();
+  int photons = Settings::instance()->photons;
   for (unsigned int i = 0; i < scene.lights.size(); i++) {
-    Primitive& light = scene.lights[i];
+    Primitive& light = *(scene.lights[i]);
     Sphere& sphere = (Sphere&) light;
-    int photons = Settings::instance()->photons;
     while (hits < photons) {
       double distance = 1000000;
       Vector3d direction = getHaltonPointOnSphere(offset+tries, 1);
       Vector3d position = sphere.center + (direction * sphere.radius);
       Ray ray(position + direction*epsilon, direction);
+      int primId = -1;
 
-      boost::optional<Primitive&> primitive = raytrace(ray, 1, distance);
-      if (primitive) {
+      if (raytrace(ray, primId, distance) == Primitive::HIT) {
+        Primitive& newPrim = *(scene.primitives[primId]);
         Vector3d intersectionPoint = ray.origin + ray.direction * distance;
-        Color3f color = primitive.get().material.color * light.material.color;
-        photonMap->add(new common::PhotonHit(intersectionPoint, color, primitive.get()));
-        createShadowPhoton(primitive.get(), intersectionPoint, color, 0);
+        Color3f color = newPrim.material.color * light.material.color;
+        photonMap->add(new common::PhotonHit(intersectionPoint, color, newPrim));
+        createShadowPhoton(newPrim, intersectionPoint, color, 0);
         hits++;
       }
       tries++;
     }
   }
-  photonMap->fluxWeight = 1.0 / tries;
-  shadowMap->fluxWeight = 1.0 / tries;
+  photonMap->fluxWeight = photons * 1.0 / tries;
+  shadowMap->fluxWeight = photons * 1.0 / tries;
   photonMap->initDraw();
   shadowMap->initDraw();
+  std::cout << "Created the photonMap, tries: " << tries << ", hits: " << hits << "\n";
 }
 
 bool PhotonEngine::photonTrace(Primitive& light, int i, int iMax, int j, int jMax) {
@@ -58,13 +60,14 @@ bool PhotonEngine::photonTrace(Primitive& light, int i, int iMax, int j, int jMa
   Vector3d direction = getPointOnSphere(1, theta, z);
   Vector3d position = sphere.center + direction * sphere.radius;
   Ray ray(position + direction*epsilon, direction);
+  int primId = -1;
 
-  boost::optional<Primitive&> primitive = raytrace(ray, 1, distance);
-  if (primitive) {
+  if (raytrace(ray, primId, distance) == Primitive::HIT) {
+    Primitive& newPrim = *(scene.primitives[primId]);
     Vector3d intersectionPoint = ray.origin + ray.direction * distance;
-    Color3f color = primitive.get().material.color * light.material.color;
-    photonMap->add(new common::PhotonHit(intersectionPoint, color, primitive.get()));
-    createShadowPhoton(primitive.get(), intersectionPoint, color, 0);
+    Color3f color = newPrim.material.color * light.material.color;
+    photonMap->add(new common::PhotonHit(intersectionPoint, color, newPrim));
+    createShadowPhoton(newPrim, intersectionPoint, color, 0);
     return true;
   }
   return false;
@@ -79,12 +82,14 @@ void PhotonEngine::createShadowPhoton(Primitive& primitive, Vector3d intersectio
   Vector3d direction = getRandomPointOnSphere(1);
   direction = rotateVector(direction, zAxis, primNormal);
   Ray ray(intersectionPoint + direction*epsilon, direction);
-  boost::optional<Primitive&> newPrimitive = raytrace(ray, 1, distance);
-  if (newPrimitive) {
+  int primId = -1;
+
+  if (raytrace(ray, primId, distance) == Primitive::HIT) {
+    Primitive& newPrim = *(scene.primitives[primId]);
     Vector3d newIntersectionPoint = ray.origin + ray.direction * distance;
-    Color3f newColor = color * newPrimitive.get().material.color;
-    shadowMap->add(new common::PhotonHit(newIntersectionPoint, newColor, newPrimitive.get()));
-    createShadowPhoton(newPrimitive.get(), newIntersectionPoint, newColor, iteration + 1);
+    Color3f newColor = color * newPrim.material.color;
+    shadowMap->add(new common::PhotonHit(newIntersectionPoint, newColor, newPrim));
+    createShadowPhoton(newPrim, newIntersectionPoint, newColor, iteration + 1);
   }
 }
 
@@ -130,18 +135,28 @@ Vector3d PhotonEngine::getPointOnSphere(double radius, double theta, double z) {
 }
 
 bool PhotonEngine::finalGatherHelper(HitPoint& hit, Vector3d direction, Color3f& color) {
+
   double distance = 1000000;
   Vector3d position = hit.location;
   Vector3d normal = hit.primitive.getNormal(hit.location);
   Ray ray(position + direction*epsilon, direction);
-  boost::optional<Primitive&> primitive = raytrace(ray, 1, distance);
-  if (primitive) {
-    Color3f tempColor;
+  int primId = -1;
+  int hitType = raytrace(ray, primId, distance);
+  if (primId != -1) {
+    Primitive& newPrim = *(scene.primitives[primId]);
+    Color3f tempColor(0, 0, 0);
     Vector3d intersectionPoint = ray.origin + ray.direction * distance;
-    HitPoint tempHit = HitPoint(intersectionPoint, ray, primitive.get());
+    HitPoint tempHit = HitPoint(intersectionPoint, ray, hitType, newPrim);
     photonMap->drawHit(tempHit, tempColor);
+//    if (tempColor.r + tempColor.g + tempColor.b > 3.0) {
+//      std::cout << "tempColor1: " << tempColor.r << ", " << tempColor.g << ", " << tempColor.b << "\n";
+//      std::cout << "primId: " << primId << "\n";
+//      std::cout << "hitType: " << hitType << "\n";
+//    }
     shadowMap->drawHit(tempHit, tempColor);
+//    std::cout << "tempColor2: " << tempColor.r << ", " << tempColor.g << ", " << tempColor.b << "\n";
     color += hit.primitive.material.diffusion * hit.primitive.material.color * tempColor;
+//    std::cout << "Color: " << color.r << ", " << color.g << ", " << color.b << "\n";
     return true;
   }
   return false;
@@ -160,8 +175,6 @@ float PhotonEngine::halton(int id, int prime) {
   return h;
 }
 
-//FIXME: Some kind of problem with how rays are hitting the rear wall.  It's
-// causing speckling due to missed ray intersections.  Need to investigate.
 Color3f PhotonEngine::finalGather(HitPoint& hit) {
   Color3f color(0, 0, 0);
   Vector3d position = hit.location;
@@ -170,7 +183,7 @@ Color3f PhotonEngine::finalGather(HitPoint& hit) {
   int hits = 0;
   int tries = 0;
   int offset = rand();
-  while (hits < samples) {
+  while (hits < samples && tries < 2 * samples) {
     Vector3d direction = getHaltonPointOnHalfSphere(tries+offset, 1);
 //    Vector3d direction = getRandomPointOnHalfSphere(1);
     direction = rotateVector(direction, Vector3d(0, 0, 1), normal);
@@ -186,10 +199,13 @@ Color3f PhotonEngine::finalGather(HitPoint& hit) {
 //    std::cout << "samples: " << samples << ", tries: " << tries << ", hits: " << hits << "\n";
 //    std::cout << "normal: x: " << normal.x() << " y: " << normal.y() << " z: " << normal.z() << "\n";
 //  }
-  return (1.0/tries) * color;
+  color = (1.0/tries) * color;
+//  std::cout << "Final Color: " << color.r << ", " << color.g << ", " << color.b << "\n";
+  return color;
 }
 
 Color3f PhotonEngine::renderPixel(int x, int y) {
+  std::cout << "PhotonEngine - Rendering Pixel x: " << x << ", y: " << y << "\n";
   Color3f color(0, 0, 0);
   boost::optional<HitPoint>& hitPoint = hitPoints[y * width + x];
 

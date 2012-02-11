@@ -7,15 +7,15 @@
 
 #ifndef SCENE_H_
 #define SCENE_H_
-#include "boost/ptr_container/ptr_vector.hpp"
+#include <vector>
 #include "primitives/Primitive.h"
 #include "primitives/PlanePrim.h"
 #include "primitives/Sphere.h"
 
 class Scene {
   public:
-  boost::ptr_vector<Primitive> primitives;
-  boost::ptr_vector<Primitive> lights;
+  std::vector<Primitive*> primitives;
+  std::vector<Primitive*> lights;
   Scene();
   virtual ~Scene();
 

@@ -12,10 +12,10 @@
 class Material {
   public:
   Color3f color;
-  float reflection, refraction, diffusion, rIndex;
+  float reflection, specular, refraction, diffusion, rIndex;
 
   Material();
-  float specular();
+  Material(Color3f _color, float _reflection, float _specular, float _refraction, float _rIndex, float _diffusion);
   virtual ~Material();
 };
 

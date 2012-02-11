@@ -46,7 +46,8 @@ int main(int argc, char *argv[]) {
   // Draw the raytracing layer
   layers.push_back(std::vector<Color3f>(width * height));
   RayTracingEngine rtEngine(width, height);
-  rtEngine.initRender(Vector3d(50, 52, 0), Vector3d(50, 52, 1));
+//  rtEngine.initRender(Vector3d(50, 52, 0), Vector3d(50, 52, 1));
+  rtEngine.initRender(Vector3d(0, 0, 0), Vector3d(0, 0, 1));
   drawer->draw(rtEngine, layers, layers.size() - 1, 0);
 
   // Draw the photon layer
@@ -58,7 +59,8 @@ int main(int argc, char *argv[]) {
     if (i < iterations) {
       PhotonEngine engine(width, height, photonRadius);
       photonRadius *= photonMult;
-      engine.initRender(Vector3d(50, 52, 0), Vector3d(50, 52, 1));
+//      engine.initRender(Vector3d(50, 52, 0), Vector3d(50, 52, 1));
+      engine.initRender(Vector3d(0, 0, 0), Vector3d(0, 0, 1));
       drawer->draw(engine, layers, layers.size() - 1, i);
       std::cout << "Finished pass: " << i << "\n";
       ++i;
