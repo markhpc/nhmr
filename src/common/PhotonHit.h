@@ -10,13 +10,18 @@
 #include <Eigen/Dense>
 #include "primitives/Primitive.h"
 #include "common/Color3f.h"
+
 namespace common {
   class PhotonHit {
     public:
       Vector3d location;
+      Vector3d direction;
       Color3f color;
+      Primitive& oldPrimitive;
       Primitive& primitive;
-      PhotonHit(Vector3d _location, Color3f _color, Primitive& _primitive);
+      int specular;
+
+      PhotonHit(Vector3d _location, Vector3d _direction, Color3f _color, Primitive& _oldPrimitive, Primitive& _primitive, int _specular);
       double x() const;
       double y() const;
       double z() const;

@@ -72,16 +72,16 @@ void KDTree::add(common::PhotonHit* photonHit) {
   hits.push_back(photonHit);
 }
 
-void KDTree::drawHit(HitPoint& hitPoint, Color3f& color) {
+void KDTree::drawHit(HitPoint* hitPoint, Color3f& color) {
   _searchTree(root, hitPoint, color, 0);
 }
 
-void KDTree::_searchTree(KDTreeNode* node, HitPoint& hitPoint, Color3f& color, int depth) {
+void KDTree::_searchTree(KDTreeNode* node, HitPoint* hitPoint, Color3f& color, int depth) {
   if (node->data) {
     color += getColor(node->data->begin(), node->data->end(), hitPoint);
     return;
   }
-  double position = hitPoint.location[depth%3];
+  double position = hitPoint->location[depth%3];
   if (position - photonHitRadius < node->splitPos) {
     _searchTree(node->left, hitPoint, color, depth + 1);
   }

@@ -9,7 +9,7 @@
 
 Scene::Scene() {
   Primitive* primitive;
-
+/*
   // Ground Plane
   primitive = new PlanePrim(Vector3d(0, 1, 0), 4.4);
   primitive->name = "plane";
@@ -48,14 +48,14 @@ Scene::Scene() {
 //  primitive = primitives.back();
   primitive->name = "light 1";
   primitive->light = true;
-  primitive->material.color = Color3f(0.4, 0.4, 0.4);
+  primitive->material.color = Color3f(20, 20, 20);
 //  primitive->material.color = Color3f(1.0, 1.0, 1.0);
   lights.push_back(primitive);
 
   // light source 2
   primitive = new Sphere(Vector3d(-3, 5, 1), 0.1);
   primitive->light = true;
-  primitive->material.color = Color3f(0.6, 0.6, 0.8);
+  primitive->material.color = Color3f(30, 30, 40);
   primitives.push_back(primitive);
   lights.push_back(primitive);
 
@@ -100,9 +100,10 @@ Scene::Scene() {
       primitives.push_back(primitive);
     }
   }
+*/
 
 // Cornell Box
-/*
+
   primitive = new Sphere(Vector3d(-1e5, 40.8, 81.6), 1e5);
   primitive->name = "left wall";
   primitive->material.color = Color3f(.75, .25, .25);
@@ -154,14 +155,14 @@ Scene::Scene() {
   primitive->material.color = Color3f(5000, 5000, 5000);
 //  primitives.push_back(primitive);
   lights.push_back(primitive);
-
+/*
   primitive = new Sphere(Vector3d(26, 12, 100.6), 12);
   primitive->name = "ball1";
   primitive->material.color = Color3f(.75, .75, .75);
   primitive->material.diffusion = 0.0;
   primitive->material.reflection = 1.0;
   primitives.push_back(primitive);
-
+*/
   primitive = new Sphere(Vector3d(50, 12, 100.6), 12);
   primitive->name = "ball2";
   primitive->material.color = Color3f(.25, .75, .25);
@@ -172,9 +173,12 @@ Scene::Scene() {
   primitive->name = "ball3";
   primitive->material.color = Color3f(1.0, 1.0, 1.0);
   primitive->material.diffusion = 0.0;
-  primitive->material.reflection = 0.0;
-  primitive->material.refraction = 1.0;
-  primitive->material.rIndex = 1.52;
+  primitive->material.reflection = 0;
+  primitive->material.refraction = 1;
+  primitive->material.rIndex = 1.0;
+//  primitive->material.reflection = 0.2;
+//  primitive->material.refraction = 0.8;
+//  primitive->material.rIndex = 1.52;
   primitives.push_back(primitive);
 
 //  primitive = new Sphere(Vector3d(0, 0, 0), 5);

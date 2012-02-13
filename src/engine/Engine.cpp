@@ -11,6 +11,16 @@ Engine::Engine(int _width, int _height) :
   scene(), width(_width), height(_height) {
 }
 
+Engine::~Engine() {
+  for (int x = 0; x < width; ++x) {
+    for (int y = 0; y < height; ++y) {
+      for (std::vector<HitPoint*>::iterator it = hitPoints[x][y].begin(); it != hitPoints[x][y].end(); ++it) {
+        delete *it;
+      }
+    }
+  }
+}
+
 int Engine::raytrace(Ray& ray, int& primId, double& distance) {
 //  boost::optional<Primitive&> primitive;
   int ret = Primitive::MISS;
@@ -27,6 +37,9 @@ int Engine::raytrace(Ray& ray, int& primId, double& distance) {
 }
 
 void Engine::initRender(Vector3d position, Vector3d target) {
+  // Initialize the hitPoint vector
+  hitPoints = vector<vector<vector<HitPoint*> > > (width, vector<vector<HitPoint*> >(height, vector<HitPoint*>()));
+
   Vector3d origin = Vector3d(0, 0, -5);
   Vector3d p1 = Vector3d(-4, 3, 0);
   Vector3d p2 = Vector3d(4, 3, 0);
@@ -76,24 +89,90 @@ void Engine::initRender(Vector3d position, Vector3d target) {
       if (primId != -1) {
 //        std::cout << "x: " << x << ", y: " << y << ", primId: " << primId << "\n";
         Vector3d intersectionPoint = ray.origin + ray.direction * distance;
-        HitPoint hitPoint = HitPoint(intersectionPoint, ray, hitType, *(scene.primitives[primId]));
-        hitPoints.push_back(new boost::optional<HitPoint>(hitPoint));
+        hitPoints[x][y].push_back(new HitPoint(intersectionPoint, ray, hitType, *(scene.primitives[primId])));
+//        hitPoints.push_back(new boost::optional<HitPoint>(hitPoint));
       } else {
-    	hitPoints.push_back(new boost::optional<HitPoint>());
+//    	hitPoints.push_back(new boost::optional<HitPoint>());
       }
     }
   }
 //  createPhotonMap();
 }
 
+Color3f RayTracingEngine::calculateReflection(HitPoint* hitPoint, int depth) {
+  double reflection = hitPoint->primitive.material.reflection;
+  if (reflection <= 0) return Color3f(0, 0, 0);
+
+  Primitive& primitive = hitPoint->primitive;
+  Color3f reflectionColor(0, 0, 0);
+  Vector3d intersectionPoint = hitPoint->location;
+  Vector3d N = primitive.getNormal(intersectionPoint);
+  Vector3d R = hitPoint->ray.direction - 2 * hitPoint->ray.direction.dot(N) * N;
+  double tmpDistance = 1000000;
+  Ray ray = Ray(intersectionPoint + R * epsilon, R);
+  int primId = -1;
+
+  int hitType = raytrace(ray, primId, tmpDistance);
+  if (primId != -1) {
+    Primitive& newPrim = *(scene.primitives[primId]);
+    intersectionPoint = ray.origin + tmpDistance * ray.direction;
+    HitPoint* hitPoint = new HitPoint(intersectionPoint, ray, hitType, newPrim);
+    drawPass(hitPoint, reflectionColor, rIndexPrev, depth);
+    delete hitPoint;
+  }
+  return (reflection * reflectionColor * primitive.material.color);
+}
+
+Color3f RayTracingEngine::calculateRefraction(HitPoint* hitPoint, float rIndexPrev, int depth) {
+  Primitive& primitive = hitPoint->primitive;
+  double refraction = primitive.material.refraction;
+
+  if (refraction == 0) return Color3f(0, 0, 0);
+
+  double rIndex = primitive.material.rIndex;
+  double n = rIndexPrev / rIndex;
+  Vector3d intersectionPoint = hitPoint->location;
+//  Vector3d N = primitive.getNormal(intersectionPoint) * (double) hitPoint.hitType;
+  Vector3d N = primitive.getNormal(intersectionPoint);
+  if (N.dot(hitPoint->ray.direction) > 0) N *= -1.0;
+
+  double cosI = -1 * N.dot(hitPoint->ray.direction);
+  double cosT2 = 1.0 - n * n * (1.0 - cosI * cosI);
+  if (cosT2 <= 0.0) return Color3f(0, 0, 0);
+
+  Vector3d T = n * hitPoint->ray.direction + (n * cosI - sqrt(cosT2)) * N;
+
+  Color3f rColor(0, 0, 0);
+  double tmpDistance = 1000000;
+  Ray ray = Ray(intersectionPoint + T * epsilon, T);
+  int primId = -1;
+
+  int hitType = raytrace(ray, primId, tmpDistance);
+  if (primId != -1) {
+    Primitive& newPrim = *(scene.primitives[primId]);
+//    std::cout << "found a primitive\n";
+    intersectionPoint = ray.origin + tmpDistance * ray.direction;
+    HitPoint* hitPoint = new HitPoint(intersectionPoint, ray, hitType, newPrim);
+    drawPass(hitPoint, rColor, rIndex, depth);
+    delete hitPoint;
+  }
+//  Color3f absorbance = primitive.material.color * 0.15 * -tmpDistance;
+//  Color3f transparency(exp(absorbance.r), exp(absorbance.b), exp(absorbance.g));
+//  std::cout << "rColor: " << rColor.r << ", " << rColor.g << ", " << rColor.b << "\n";
+//  std::cout << "transparency: " << transparency.r << ", " << transparency.g << ", " << transparency.b << "\n";
+
+//  return rColor * transparency;
+  return rColor;
+}
+
 Color3f Engine::renderPixel(int x, int y) {
   Color3f color(0, 0, 0);
-  boost::optional<HitPoint>& hitPoint = hitPoints[y * width + x];
-  if (hitPoint) {
+//  boost::optional<HitPoint>& hitPoint = hitPoints[y * width + x];
+//  if (hitPoint) {
 //    drawpass(hitPoint.get(), color);
 //    photonMap->drawHit(hitPoint.get(), color);
 //    shadowMap->drawHit(hitPoint.get(), color);
-  }
+//  }
 //  if (hitPoint) photonPass(hitPoint.get(), color);
 //  if (hitPoint) drawpass(hitPoint.get(), color);
   /*
@@ -131,8 +210,5 @@ Color3f Engine::renderPixel(int x, int y) {
   }
   */
   return color;
-}
-
-Engine::~Engine() {
 }
 

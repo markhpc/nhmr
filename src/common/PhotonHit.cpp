@@ -7,7 +7,7 @@
 
 #include "PhotonHit.h"
 
-common::PhotonHit::PhotonHit(Vector3d _location, Color3f _color, Primitive& _primitive) : location(_location), color(_color), primitive(_primitive) {
+common::PhotonHit::PhotonHit(Vector3d _location, Vector3d _direction, Color3f _color, Primitive& _oldPrimitive, Primitive& _primitive, int _specular) : location(_location), direction(_direction), color(_color), oldPrimitive(_oldPrimitive), primitive(_primitive), specular(_specular) {
 }
 
 double common::PhotonHit::x() const {

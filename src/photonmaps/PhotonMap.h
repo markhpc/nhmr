@@ -22,27 +22,27 @@ class PhotonMap {
     double fluxWeight;
     PhotonMap(double _photonHitRadius);
     virtual void add(common::PhotonHit *photonHit) = 0;
-    virtual void drawHit(HitPoint& hitPoint, Color3f& color) = 0;
+    virtual void drawHit(HitPoint* hitPoint, Color3f& color) = 0;
     virtual void initDraw() = 0;
     virtual ~PhotonMap() {};
-    Color3f getColor(std::vector<common::PhotonHit*>::iterator lower, std::vector<common::PhotonHit*>::iterator upper, HitPoint& hitPoint) {
+    Color3f getColor(std::vector<common::PhotonHit*>::iterator lower, std::vector<common::PhotonHit*>::iterator upper, HitPoint* hitPoint) {
       Color3f tempColor(0, 0, 0);
       while (lower != upper) {
         common::PhotonHit* photonHit = (*lower);
-        Vector3d vector = photonHit->location - hitPoint.location;
+        Vector3d vector = photonHit->location - hitPoint->location;
         double distance = vector.norm();
         if (distance < photonHitRadius) {
           vector.normalize();
-          if (&(hitPoint.primitive) == &(photonHit->primitive)) {
+          if (&(hitPoint->primitive) == &(photonHit->primitive)) {
 //            tempColor += (1 - distance / photonHitRadius) * photonHit->color;
             tempColor += photonHit->color;
           }
         }
         ++lower;
       }
-      double weight = fluxWeight;
+      double weight = 16 * fluxWeight;
 //      return tempColor * (3.0 / (pi * photonHitRadius * photonHitRadius)) * weight;
-      return tempColor * (1.0 / (2 * pi * photonHitRadius * photonHitRadius)) * weight;
+      return tempColor * (1.0 / (pi * photonHitRadius * photonHitRadius)) * weight;
     }
 };
 

@@ -24,10 +24,11 @@ void PhotonEngine::createPhotonMap() {
   int tries = 0;
   int offset = rand();
   int photons = Settings::instance()->photons;
-  for (unsigned int i = 0; i < scene.lights.size(); i++) {
-    Primitive& light = *(scene.lights[i]);
-    Sphere& sphere = (Sphere&) light;
-    while (hits < photons) {
+  while (hits < photons) {
+    for (unsigned int i = 0; i < scene.lights.size(); i++) {
+      if (hits >= photons) break;
+      Primitive& light = *(scene.lights[i]);
+      Sphere& sphere = (Sphere&) light;
       double distance = 1000000;
       Vector3d direction = getHaltonPointOnSphere(offset+tries, 1);
       Vector3d position = sphere.center + (direction * sphere.radius);
@@ -38,58 +39,131 @@ void PhotonEngine::createPhotonMap() {
         Primitive& newPrim = *(scene.primitives[primId]);
         Vector3d intersectionPoint = ray.origin + ray.direction * distance;
         Color3f color = newPrim.material.color * light.material.color;
-        photonMap->add(new common::PhotonHit(intersectionPoint, color, newPrim));
-        createShadowPhoton(newPrim, intersectionPoint, color, 0);
+        russianRoulette(new common::PhotonHit(intersectionPoint, direction, color, light, newPrim, 0), 0);
         hits++;
       }
       tries++;
     }
   }
-  photonMap->fluxWeight = photons * 1.0 / tries;
-  shadowMap->fluxWeight = photons * 1.0 / tries;
+  photonMap->fluxWeight = 1.0 / tries;
+  shadowMap->fluxWeight = 1.0 / tries;
   photonMap->initDraw();
   shadowMap->initDraw();
   std::cout << "Created the photonMap, tries: " << tries << ", hits: " << hits << "\n";
 }
 
-bool PhotonEngine::photonTrace(Primitive& light, int i, int iMax, int j, int jMax) {
-  Sphere& sphere = (Sphere&) light;
-  double distance = 1000000;
-  double theta = 2*pi*(i + rand()/((double) RAND_MAX))/iMax; // 0 to 2pi
-  double z = 2*(j + rand()/((double) RAND_MAX))/jMax - 1;  // -1 to 1
-  Vector3d direction = getPointOnSphere(1, theta, z);
-  Vector3d position = sphere.center + direction * sphere.radius;
-  Ray ray(position + direction*epsilon, direction);
-  int primId = -1;
+void PhotonEngine::russianRoulette(common::PhotonHit* photonHit, int iteration) {
+  float diffusion = photonHit->primitive.material.diffusion;
+  float reflection = photonHit->primitive.material.reflection;
+  float refraction = photonHit->primitive.material.refraction;
+  float total = diffusion + reflection + refraction;
 
-  if (raytrace(ray, primId, distance) == Primitive::HIT) {
-    Primitive& newPrim = *(scene.primitives[primId]);
-    Vector3d intersectionPoint = ray.origin + ray.direction * distance;
-    Color3f color = newPrim.material.color * light.material.color;
-    photonMap->add(new common::PhotonHit(intersectionPoint, color, newPrim));
-    createShadowPhoton(newPrim, intersectionPoint, color, 0);
-    return true;
+  if (total < 1.0) total = 1.0;
+
+  if (photonHit->specular) {
+    std::cout << "diffusion: " << diffusion << ", reflection: " << reflection << ", refraction: " << refraction << ", total: " << total << "\n";
   }
-  return false;
+
+  float randNum = (float) rand() / RAND_MAX;
+  if (randNum < diffusion / total) {
+    if (photonHit->specular) {
+      Color3f c = photonHit->color;
+//      std::cout << "adding specular photon, iteration: " << iteration << "\n";
+//      std::cout << "color: " << c.r << ", " << c.g << ", " << c.b << "\n";
+//      photonHit->color = Color3f(5000, 5000, 5000);
+      shadowMap->add(photonHit);
+    } else {
+      photonHit->color = Color3f(0, 0, 0);
+    }
+    /*
+    if (iteration == 0) {
+      photonMap->add(photonHit);
+    } else {
+      shadowMap->add(photonHit);
+    }
+    */
+//    createShadowPhoton(photonHit, iteration);
+  } else if (randNum < (diffusion + reflection) / total) {
+    reflectPhoton(photonHit, iteration);
+    std::cout << "reflected photon at depth: " << iteration << "\n";
+  } else if (randNum < (diffusion + reflection + refraction) / total) {
+    std::cout << "refracted photon at depth: " << iteration << "\n";
+    refractPhoton(photonHit, iteration);
+  }
 }
 
-void PhotonEngine::createShadowPhoton(Primitive& primitive, Vector3d intersectionPoint, Color3f color, int iteration) {
+void PhotonEngine::createShadowPhoton(common::PhotonHit* photonHit, int iteration) {
   // short circuit if we've reached the max iterations;
-  if (iteration > 1) return;
+  if (iteration > 3) return;
   double distance = 1000000;
-  Vector3d primNormal = primitive.getNormal(intersectionPoint);
+  Vector3d primNormal = photonHit->primitive.getNormal(photonHit->location);
   Vector3d zAxis(0, 0, 1);
   Vector3d direction = getRandomPointOnSphere(1);
   direction = rotateVector(direction, zAxis, primNormal);
-  Ray ray(intersectionPoint + direction*epsilon, direction);
+  Ray ray(photonHit->location + direction*epsilon, direction);
   int primId = -1;
 
   if (raytrace(ray, primId, distance) == Primitive::HIT) {
     Primitive& newPrim = *(scene.primitives[primId]);
     Vector3d newIntersectionPoint = ray.origin + ray.direction * distance;
-    Color3f newColor = color * newPrim.material.color;
-    shadowMap->add(new common::PhotonHit(newIntersectionPoint, newColor, newPrim));
-    createShadowPhoton(newPrim, newIntersectionPoint, newColor, iteration + 1);
+    Color3f newColor = photonHit->color * newPrim.material.color;
+    russianRoulette(new common::PhotonHit(newIntersectionPoint, direction, newColor, photonHit->primitive, newPrim, photonHit->specular), iteration + 1);
+  }
+}
+
+void PhotonEngine::reflectPhoton(common::PhotonHit* photonHit, int iteration) {
+  // short circuit if we've reached the max iterations;
+  if (iteration > 3) return;
+  Vector3d N = photonHit->primitive.getNormal(photonHit->location);
+  Vector3d R = photonHit->direction - 2 * photonHit->direction.dot(N) * N;
+  Ray ray = Ray(photonHit->location + R * epsilon, R);
+  int primId = -1;
+  double distance = 1000000;
+
+  if (raytrace(ray, primId, distance) == Primitive::HIT) {
+    Primitive& newPrim = *(scene.primitives[primId]);
+    Vector3d newIntersectionPoint = ray.origin + ray.direction * distance;
+    Color3f newColor = photonHit->color * newPrim.material.color;
+    russianRoulette(new common::PhotonHit(newIntersectionPoint, R, newColor, photonHit->primitive, newPrim, 1), iteration + 1);
+  }
+}
+
+void PhotonEngine::refractPhoton(common::PhotonHit* photonHit, int iteration) {
+  // short circuit if we've reached the max iterations;
+  if (iteration > 3) return;
+
+  double rIndex = photonHit->primitive.material.rIndex;
+  double n = photonHit->oldPrimitive.material.rIndex / rIndex;
+//  double n = rIndex / photonHit->oldPrimitive.material.rIndex;
+  Vector3d N = photonHit->primitive.getNormal(photonHit->location);
+  if (N.dot(photonHit->direction) > 0) {
+    N *= -1.0;
+//    n = 1 / rIndex;
+  }
+  std::cout << "n: " << n << "\n";
+
+  double cosI = -1 * N.dot(photonHit->direction);
+  double cosT2 = 1.0 - n * n * (1.0 - cosI * cosI);
+  if (cosT2 <= 0.0) return;
+//  std::cout << "in refractPhoton, got past costT2 check\n";
+  Vector3d T = n * photonHit->direction + (n * cosI - sqrt(cosT2)) * N;
+
+  Vector3d temp = photonHit->direction;
+  std::cout << "old: " << temp.x() << ", " << temp.y() << ", " << temp.z() << ", ";
+  std::cout << "new: " << T.x() << ", " << T.y() << ", " << T.z() << "\n";
+
+
+  Color3f rColor(0, 0, 0);
+  Ray ray = Ray(photonHit->location + T * epsilon, T);
+  int primId = -1;
+  double distance = 1000000;
+
+  if (raytrace(ray, primId, distance) != Primitive::MISS) {
+    Primitive& newPrim = *(scene.primitives[primId]);
+    Vector3d newIntersectionPoint = ray.origin + ray.direction * distance;
+    Color3f newColor = photonHit->color * newPrim.material.color;
+//    std::cout << "in refractPhoton, calling russianRoulette\n";
+    russianRoulette(new common::PhotonHit(newIntersectionPoint, T, newColor, photonHit->primitive, newPrim, 1), iteration + 1);
   }
 }
 
@@ -134,11 +208,11 @@ Vector3d PhotonEngine::getPointOnSphere(double radius, double theta, double z) {
   return direction;
 }
 
-bool PhotonEngine::finalGatherHelper(HitPoint& hit, Vector3d direction, Color3f& color) {
+bool PhotonEngine::finalGatherHelper(HitPoint* hit, Vector3d direction, Color3f& color) {
 
   double distance = 1000000;
-  Vector3d position = hit.location;
-  Vector3d normal = hit.primitive.getNormal(hit.location);
+  Vector3d position = hit->location;
+  Vector3d normal = hit->primitive.getNormal(hit->location);
   Ray ray(position + direction*epsilon, direction);
   int primId = -1;
   int hitType = raytrace(ray, primId, distance);
@@ -146,7 +220,7 @@ bool PhotonEngine::finalGatherHelper(HitPoint& hit, Vector3d direction, Color3f&
     Primitive& newPrim = *(scene.primitives[primId]);
     Color3f tempColor(0, 0, 0);
     Vector3d intersectionPoint = ray.origin + ray.direction * distance;
-    HitPoint tempHit = HitPoint(intersectionPoint, ray, hitType, newPrim);
+    HitPoint* tempHit = new HitPoint(intersectionPoint, ray, hitType, newPrim);
     photonMap->drawHit(tempHit, tempColor);
 //    if (tempColor.r + tempColor.g + tempColor.b > 3.0) {
 //      std::cout << "tempColor1: " << tempColor.r << ", " << tempColor.g << ", " << tempColor.b << "\n";
@@ -154,8 +228,9 @@ bool PhotonEngine::finalGatherHelper(HitPoint& hit, Vector3d direction, Color3f&
 //      std::cout << "hitType: " << hitType << "\n";
 //    }
     shadowMap->drawHit(tempHit, tempColor);
+    delete tempHit;
 //    std::cout << "tempColor2: " << tempColor.r << ", " << tempColor.g << ", " << tempColor.b << "\n";
-    color += hit.primitive.material.diffusion * hit.primitive.material.color * tempColor;
+    color += hit->primitive.material.diffusion * hit->primitive.material.color * tempColor;
 //    std::cout << "Color: " << color.r << ", " << color.g << ", " << color.b << "\n";
     return true;
   }
@@ -175,10 +250,10 @@ float PhotonEngine::halton(int id, int prime) {
   return h;
 }
 
-Color3f PhotonEngine::finalGather(HitPoint& hit) {
+Color3f PhotonEngine::finalGather(HitPoint* hit) {
   Color3f color(0, 0, 0);
-  Vector3d position = hit.location;
-  Vector3d normal = hit.primitive.getNormal(hit.location);
+  Vector3d position = hit->location;
+  Vector3d normal = hit->primitive.getNormal(hit->location);
   int samples = Settings::instance()->samples;
   int hits = 0;
   int tries = 0;
@@ -205,17 +280,20 @@ Color3f PhotonEngine::finalGather(HitPoint& hit) {
 }
 
 Color3f PhotonEngine::renderPixel(int x, int y) {
-  std::cout << "PhotonEngine - Rendering Pixel x: " << x << ", y: " << y << "\n";
+//  std::cout << "PhotonEngine - Rendering Pixel x: " << x << ", y: " << y << "\n";
   Color3f color(0, 0, 0);
-  boost::optional<HitPoint>& hitPoint = hitPoints[y * width + x];
+//  boost::optional<HitPoint>& hitPoint = hitPoints[y * width + x];
 
   // Short Circuit if nothing is there.
-  if (!hitPoint) return color;
+//  if (!hitPoint) return color;
 //  photonMap->drawHit(hitPoint.get(), color);
   // If set, return finalGather rather than direct visualization of the photonMap.
-  if (Settings::instance()->finalGather) {
-    color += finalGather(hitPoint.get());
+
+  for (int i = 0; i < hitPoints[x][y].size(); ++i) {
+    if (Settings::instance()->finalGather)
+      color += finalGather(hitPoints[x][y][i]);
+    else
+      shadowMap->drawHit(hitPoints[x][y][i], color);
   }
-  else shadowMap->drawHit(hitPoint.get(), color);
   return color;
 }

@@ -70,7 +70,7 @@ class BinarySearch : public PhotonMap {
     BinarySearch(double _photonHitRadius);
     void add(common::PhotonHit*);
     void initDraw();
-    void drawHit(HitPoint& hitPoint, Color3f& color);
+    void drawHit(HitPoint* hitPoint, Color3f& color);
     virtual ~BinarySearch();
 };
 

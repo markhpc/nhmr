@@ -23,6 +23,6 @@ void LinearSearch::add(common::PhotonHit* photonHit) {
 void LinearSearch::initDraw() {
 }
 
-void LinearSearch::drawHit(HitPoint& hitPoint, Color3f& color) {
+void LinearSearch::drawHit(HitPoint* hitPoint, Color3f& color) {
   color += getColor(hits.begin(), hits.end(), hitPoint);
 }

@@ -8,12 +8,12 @@
 #include "Material.h"
 
 Material::Material() {
-  color = Color3f(0.2, 0.2, 0.2);
+  color = Color3f(0, 0, 0);
   reflection = 0;
-  specular = 0.8;
+  specular = 0;
   refraction = 0;
-  rIndex = 1.5f;
-  diffusion = 0.2;
+  rIndex = 1.0;
+  diffusion = 0;
 }
 
 Material::Material(Color3f _color, float _reflection, float _specular, float _refraction, float _rIndex, float _diffusion) :

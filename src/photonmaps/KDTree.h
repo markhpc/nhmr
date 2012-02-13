@@ -28,11 +28,11 @@ class KDTree: public PhotonMap {
   virtual ~KDTree();
   void initDraw();
   void add(common::PhotonHit* photonHit);
-  void drawHit(HitPoint& hitPoint, Color3f& color);
+  void drawHit(HitPoint* hitPoint, Color3f& color);
 
   private:
   void _buildTree(KDTreeNode* node, std::vector<common::PhotonHit*>::iterator begin, std::vector<common::PhotonHit*>::iterator end, int depth);
-  void _searchTree(KDTreeNode* node, HitPoint& hitPoint, Color3f& color, int depth);
+  void _searchTree(KDTreeNode* node, HitPoint* hitPoint, Color3f& color, int depth);
   int _getSplitIndexMedian(std::vector<common::PhotonHit*>::iterator begin, std::vector<common::PhotonHit*>::iterator end, int depth);
   int _getSplitIndexSAH(std::vector<common::PhotonHit*>::iterator begin, std::vector<common::PhotonHit*>::iterator end, int depth);
 };

@@ -25,7 +25,7 @@ class SpatialHash: public PhotonMap {
   virtual ~SpatialHash();
   void initDraw();
   void add(common::PhotonHit* photonHit);
-  void drawHit(HitPoint& hitPoint, Color3f& color);
+  void drawHit(HitPoint* hitPoint, Color3f& color);
   private:
   int _hash(int x, int y, int z);
 };

@@ -45,11 +45,11 @@ int SpatialHash::_hash(int x, int y, int z) {
   return ((unsigned int) ((x * 73856093) ^ (y * 19349663) ^ (z * 83492791))) % size;
 }
 
-void SpatialHash::drawHit(HitPoint& hitPoint, Color3f& color) {
+void SpatialHash::drawHit(HitPoint* hitPoint, Color3f& color) {
   double cellSize = 1.0 / (photonHitRadius * 2);
-  int x = (int) hitPoint.location.x() * cellSize;
-  int y = (int) hitPoint.location.y() * cellSize;
-  int z = (int) hitPoint.location.z() * cellSize;
+  int x = (int) hitPoint->location.x() * cellSize;
+  int y = (int) hitPoint->location.y() * cellSize;
+  int z = (int) hitPoint->location.z() * cellSize;
   std::vector<common::PhotonHit*> hits = photonVector[(_hash(x,y,z))];
   color += getColor(hits.begin(), hits.end(), hitPoint);
 }

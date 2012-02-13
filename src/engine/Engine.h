@@ -13,8 +13,6 @@
 #include <math.h>
 #include <inttypes.h>
 #include <time.h>
-#include <boost/optional.hpp>
-#include <boost/ptr_container/ptr_vector.hpp>
 #include <ctime>
 #include <tr1/unordered_map>
 #include "common/Settings.h"
@@ -39,7 +37,8 @@ const int traceDepth = 6;
 
 class Engine {
   public:
-  boost::ptr_vector<boost::optional<HitPoint> > hitPoints;
+//  boost::ptr_vector<boost::optional<HitPoint> > hitPoints;
+    std::vector<std::vector<std::vector<HitPoint*> > > hitPoints;
   Scene scene;
   int width, height;
   Engine(int _width, int _height);
