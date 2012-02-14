@@ -220,7 +220,7 @@ bool PhotonEngine::finalGatherHelper(HitPoint* hit, Vector3d direction, Color3f&
     Primitive& newPrim = *(scene.primitives[primId]);
     Color3f tempColor(0, 0, 0);
     Vector3d intersectionPoint = ray.origin + ray.direction * distance;
-    HitPoint* tempHit = new HitPoint(intersectionPoint, ray, hitType, newPrim);
+    HitPoint* tempHit = new HitPoint(intersectionPoint, ray, hitType, newPrim, Color3f(1, 1, 1));
     photonMap->drawHit(tempHit, tempColor);
 //    if (tempColor.r + tempColor.g + tempColor.b > 3.0) {
 //      std::cout << "tempColor1: " << tempColor.r << ", " << tempColor.g << ", " << tempColor.b << "\n";

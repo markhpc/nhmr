@@ -155,14 +155,14 @@ Scene::Scene() {
   primitive->material.color = Color3f(5000, 5000, 5000);
 //  primitives.push_back(primitive);
   lights.push_back(primitive);
-/*
+
   primitive = new Sphere(Vector3d(26, 12, 100.6), 12);
   primitive->name = "ball1";
   primitive->material.color = Color3f(.75, .75, .75);
   primitive->material.diffusion = 0.0;
   primitive->material.reflection = 1.0;
   primitives.push_back(primitive);
-*/
+
   primitive = new Sphere(Vector3d(50, 12, 100.6), 12);
   primitive->name = "ball2";
   primitive->material.color = Color3f(.25, .75, .25);

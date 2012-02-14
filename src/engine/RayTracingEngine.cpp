@@ -30,6 +30,7 @@ void RayTracingEngine::drawPass(HitPoint* hitPoint, Color3f& color, float rIndex
     color += calculateDiffuse(hitPoint->primitive, light, hitPoint->location) * shade;
     color += calculateSpecular(hitPoint, light) * shade;
   }
+  color *= hitPoint->contribution;
 //  color += calculateReflection(hitPoint, rIndexPrev, depth);
 //  color += calculateRefraction(hitPoint, rIndexPrev, depth);
 }
@@ -86,7 +87,7 @@ Color3f RayTracingEngine::calculateSpecular(HitPoint* hitPoint, Primitive& light
 //  std::cout << light.material.color.r << " " << light.material.color.g << " " << light.material.color.b << "\n";
   return spec * light.material.color;
 }
-
+/*
 Color3f RayTracingEngine::calculateReflection(HitPoint* hitPoint, float rIndexPrev, int depth) {
   double reflection = hitPoint->primitive.material.reflection;
   if (reflection <= 0) return Color3f(0, 0, 0);
@@ -152,7 +153,7 @@ Color3f RayTracingEngine::calculateRefraction(HitPoint* hitPoint, float rIndexPr
 //  return rColor * transparency;
   return rColor;
 }
-
+*/
 Color3f RayTracingEngine::renderPixel(int x, int y) {
   Color3f color(0, 0, 0);
   int depth = 0;

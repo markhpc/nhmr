@@ -88,8 +88,12 @@ void Engine::initRender(Vector3d position, Vector3d target) {
       int hitType = raytrace(ray, primId, distance);
       if (primId != -1) {
 //        std::cout << "x: " << x << ", y: " << y << ", primId: " << primId << "\n";
+        Primitive& newPrim = *(scene.primitives[primId]);
         Vector3d intersectionPoint = ray.origin + ray.direction * distance;
-        hitPoints[x][y].push_back(new HitPoint(intersectionPoint, ray, hitType, *(scene.primitives[primId])));
+        HitPoint* newHit = new HitPoint(intersectionPoint, ray, hitType, newPrim, Color3f(1, 1, 1));
+        hitPoints[x][y].push_back(newHit);
+        calculateReflection(newHit, x, y, newPrim.material.rIndex, 0);
+        calculateRefraction(newHit, x, y, newPrim.material.rIndex, 0);
 //        hitPoints.push_back(new boost::optional<HitPoint>(hitPoint));
       } else {
 //    	hitPoints.push_back(new boost::optional<HitPoint>());
@@ -99,9 +103,9 @@ void Engine::initRender(Vector3d position, Vector3d target) {
 //  createPhotonMap();
 }
 
-Color3f RayTracingEngine::calculateReflection(HitPoint* hitPoint, int depth) {
+void Engine::calculateReflection(HitPoint* hitPoint, int x, int y, float rIndexPrev, int depth) {
   double reflection = hitPoint->primitive.material.reflection;
-  if (reflection <= 0) return Color3f(0, 0, 0);
+  if (depth > traceDepth || reflection <= 0) return;
 
   Primitive& primitive = hitPoint->primitive;
   Color3f reflectionColor(0, 0, 0);
@@ -114,20 +118,21 @@ Color3f RayTracingEngine::calculateReflection(HitPoint* hitPoint, int depth) {
 
   int hitType = raytrace(ray, primId, tmpDistance);
   if (primId != -1) {
+    Color3f contribution = hitPoint->contribution * primitive.material.color * reflection;
     Primitive& newPrim = *(scene.primitives[primId]);
     intersectionPoint = ray.origin + tmpDistance * ray.direction;
-    HitPoint* hitPoint = new HitPoint(intersectionPoint, ray, hitType, newPrim);
-    drawPass(hitPoint, reflectionColor, rIndexPrev, depth);
-    delete hitPoint;
+    HitPoint* newHit = new HitPoint(intersectionPoint, ray, hitType, newPrim, contribution);
+    hitPoints[x][y].push_back(newHit);
+    calculateReflection(newHit, x, y, rIndexPrev, depth+1);
+    calculateRefraction(newHit, x, y, rIndexPrev, depth+1);
   }
-  return (reflection * reflectionColor * primitive.material.color);
 }
 
-Color3f RayTracingEngine::calculateRefraction(HitPoint* hitPoint, float rIndexPrev, int depth) {
+void Engine::calculateRefraction(HitPoint* hitPoint, int x, int y, float rIndexPrev, int depth) {
   Primitive& primitive = hitPoint->primitive;
   double refraction = primitive.material.refraction;
 
-  if (refraction == 0) return Color3f(0, 0, 0);
+  if (depth > traceDepth || refraction == 0) return;
 
   double rIndex = primitive.material.rIndex;
   double n = rIndexPrev / rIndex;
@@ -138,7 +143,7 @@ Color3f RayTracingEngine::calculateRefraction(HitPoint* hitPoint, float rIndexPr
 
   double cosI = -1 * N.dot(hitPoint->ray.direction);
   double cosT2 = 1.0 - n * n * (1.0 - cosI * cosI);
-  if (cosT2 <= 0.0) return Color3f(0, 0, 0);
+  if (cosT2 <= 0.0) return;
 
   Vector3d T = n * hitPoint->ray.direction + (n * cosI - sqrt(cosT2)) * N;
 
@@ -149,12 +154,13 @@ Color3f RayTracingEngine::calculateRefraction(HitPoint* hitPoint, float rIndexPr
 
   int hitType = raytrace(ray, primId, tmpDistance);
   if (primId != -1) {
+    Color3f contribution = hitPoint->contribution * primitive.material.color * refraction;
     Primitive& newPrim = *(scene.primitives[primId]);
-//    std::cout << "found a primitive\n";
     intersectionPoint = ray.origin + tmpDistance * ray.direction;
-    HitPoint* hitPoint = new HitPoint(intersectionPoint, ray, hitType, newPrim);
-    drawPass(hitPoint, rColor, rIndex, depth);
-    delete hitPoint;
+    HitPoint* newHit = new HitPoint(intersectionPoint, ray, hitType, newPrim, contribution);
+    hitPoints[x][y].push_back(newHit);
+    calculateReflection(newHit, x, y, rIndex, depth+1);
+    calculateRefraction(newHit, x, y, rIndex, depth+1);
   }
 //  Color3f absorbance = primitive.material.color * 0.15 * -tmpDistance;
 //  Color3f transparency(exp(absorbance.r), exp(absorbance.b), exp(absorbance.g));
@@ -162,7 +168,6 @@ Color3f RayTracingEngine::calculateRefraction(HitPoint* hitPoint, float rIndexPr
 //  std::cout << "transparency: " << transparency.r << ", " << transparency.g << ", " << transparency.b << "\n";
 
 //  return rColor * transparency;
-  return rColor;
 }
 
 Color3f Engine::renderPixel(int x, int y) {

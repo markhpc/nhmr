@@ -45,6 +45,8 @@ class Engine {
   virtual ~Engine();
   void initRender(Vector3d position, Vector3d target);
   int raytrace(Ray& ray, int& primId, double& distance);
+  void calculateReflection(HitPoint* hitPoint, int x, int y, float rIndexPrev, int depth);
+  void calculateRefraction(HitPoint* hitPoint, int x, int y, float rIndexPrev, int depth);
   virtual Color3f renderPixel(int x, int y);
 };
 
