@@ -60,34 +60,34 @@ void PhotonEngine::russianRoulette(common::PhotonHit* photonHit, int iteration) 
 
   if (total < 1.0) total = 1.0;
 
-  if (photonHit->specular) {
-    std::cout << "diffusion: " << diffusion << ", reflection: " << reflection << ", refraction: " << refraction << ", total: " << total << "\n";
-  }
+//  if (photonHit->specular) {
+//    std::cout << "diffusion: " << diffusion << ", reflection: " << reflection << ", refraction: " << refraction << ", total: " << total << "\n";
+//  }
 
   float randNum = (float) rand() / RAND_MAX;
   if (randNum < diffusion / total) {
-    if (photonHit->specular) {
-      Color3f c = photonHit->color;
+//    if (photonHit->specular) {
+//      Color3f c = photonHit->color;
 //      std::cout << "adding specular photon, iteration: " << iteration << "\n";
 //      std::cout << "color: " << c.r << ", " << c.g << ", " << c.b << "\n";
 //      photonHit->color = Color3f(5000, 5000, 5000);
-      shadowMap->add(photonHit);
-    } else {
-      photonHit->color = Color3f(0, 0, 0);
-    }
-    /*
+//      shadowMap->add(photonHit);
+//    } else {
+//      photonHit->color = Color3f(0, 0, 0);
+//    }
+
     if (iteration == 0) {
       photonMap->add(photonHit);
     } else {
       shadowMap->add(photonHit);
     }
-    */
-//    createShadowPhoton(photonHit, iteration);
+
+    createShadowPhoton(photonHit, iteration);
   } else if (randNum < (diffusion + reflection) / total) {
     reflectPhoton(photonHit, iteration);
-    std::cout << "reflected photon at depth: " << iteration << "\n";
+//    std::cout << "reflected photon at depth: " << iteration << "\n";
   } else if (randNum < (diffusion + reflection + refraction) / total) {
-    std::cout << "refracted photon at depth: " << iteration << "\n";
+//    std::cout << "refracted photon at depth: " << iteration << "\n";
     refractPhoton(photonHit, iteration);
   }
 }
@@ -140,7 +140,7 @@ void PhotonEngine::refractPhoton(common::PhotonHit* photonHit, int iteration) {
     N *= -1.0;
 //    n = 1 / rIndex;
   }
-  std::cout << "n: " << n << "\n";
+//  std::cout << "n: " << n << "rIndexPrev: " << photonHit->oldPrimitive.material.rIndex << " rIndex: " << rIndex << "\n";
 
   double cosI = -1 * N.dot(photonHit->direction);
   double cosT2 = 1.0 - n * n * (1.0 - cosI * cosI);
@@ -149,8 +149,8 @@ void PhotonEngine::refractPhoton(common::PhotonHit* photonHit, int iteration) {
   Vector3d T = n * photonHit->direction + (n * cosI - sqrt(cosT2)) * N;
 
   Vector3d temp = photonHit->direction;
-  std::cout << "old: " << temp.x() << ", " << temp.y() << ", " << temp.z() << ", ";
-  std::cout << "new: " << T.x() << ", " << T.y() << ", " << T.z() << "\n";
+//  std::cout << "old: " << temp.x() << ", " << temp.y() << ", " << temp.z() << ", ";
+//  std::cout << "new: " << T.x() << ", " << T.y() << ", " << T.z() << "\n";
 
 
   Color3f rColor(0, 0, 0);
@@ -289,11 +289,14 @@ Color3f PhotonEngine::renderPixel(int x, int y) {
 //  photonMap->drawHit(hitPoint.get(), color);
   // If set, return finalGather rather than direct visualization of the photonMap.
 
-  for (int i = 0; i < hitPoints[x][y].size(); ++i) {
+  for (unsigned int i = 0; i < hitPoints[x][y].size(); ++i) {
+    HitPoint* hitPoint = hitPoints[x][y][i];
+    Color3f hitColor(0, 0, 0);
     if (Settings::instance()->finalGather)
-      color += finalGather(hitPoints[x][y][i]);
+      hitColor += finalGather(hitPoint);
     else
-      shadowMap->drawHit(hitPoints[x][y][i], color);
+      shadowMap->drawHit(hitPoint, color);
+    color += hitColor * hitPoint->contribution;
   }
   return color;
 }

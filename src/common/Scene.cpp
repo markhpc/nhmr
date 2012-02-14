@@ -156,29 +156,29 @@ Scene::Scene() {
 //  primitives.push_back(primitive);
   lights.push_back(primitive);
 
-  primitive = new Sphere(Vector3d(26, 12, 100.6), 12);
+  primitive = new Sphere(Vector3d(26, 24, 100.6), 12);
   primitive->name = "ball1";
   primitive->material.color = Color3f(.75, .75, .75);
   primitive->material.diffusion = 0.0;
   primitive->material.reflection = 1.0;
   primitives.push_back(primitive);
 
-  primitive = new Sphere(Vector3d(50, 12, 100.6), 12);
+  primitive = new Sphere(Vector3d(50, 24, 100.6), 12);
   primitive->name = "ball2";
   primitive->material.color = Color3f(.25, .75, .25);
   primitive->material.diffusion = 1.0;
   primitives.push_back(primitive);
 
-  primitive = new Sphere(Vector3d(74, 12, 100.6), 12);
+  primitive = new Sphere(Vector3d(74, 24, 100.6), 12);
   primitive->name = "ball3";
   primitive->material.color = Color3f(1.0, 1.0, 1.0);
   primitive->material.diffusion = 0.0;
-  primitive->material.reflection = 0;
-  primitive->material.refraction = 1;
-  primitive->material.rIndex = 1.0;
+  primitive->material.reflection = 0.0;
+  primitive->material.refraction = 1.0;
+  primitive->material.rIndex = 1.52;
 //  primitive->material.reflection = 0.2;
 //  primitive->material.refraction = 0.8;
-//  primitive->material.rIndex = 1.52;
+//  primitive->material.rIndex = 1.1;
   primitives.push_back(primitive);
 
 //  primitive = new Sphere(Vector3d(0, 0, 0), 5);

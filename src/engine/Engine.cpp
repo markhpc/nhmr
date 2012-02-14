@@ -92,11 +92,8 @@ void Engine::initRender(Vector3d position, Vector3d target) {
         Vector3d intersectionPoint = ray.origin + ray.direction * distance;
         HitPoint* newHit = new HitPoint(intersectionPoint, ray, hitType, newPrim, Color3f(1, 1, 1));
         hitPoints[x][y].push_back(newHit);
-        calculateReflection(newHit, x, y, newPrim.material.rIndex, 0);
-        calculateRefraction(newHit, x, y, newPrim.material.rIndex, 0);
-//        hitPoints.push_back(new boost::optional<HitPoint>(hitPoint));
-      } else {
-//    	hitPoints.push_back(new boost::optional<HitPoint>());
+        calculateReflection(newHit, x, y, 1, 0);
+        calculateRefraction(newHit, x, y, 1, 0);
       }
     }
   }
@@ -123,8 +120,8 @@ void Engine::calculateReflection(HitPoint* hitPoint, int x, int y, float rIndexP
     intersectionPoint = ray.origin + tmpDistance * ray.direction;
     HitPoint* newHit = new HitPoint(intersectionPoint, ray, hitType, newPrim, contribution);
     hitPoints[x][y].push_back(newHit);
-    calculateReflection(newHit, x, y, rIndexPrev, depth+1);
-    calculateRefraction(newHit, x, y, rIndexPrev, depth+1);
+    calculateReflection(newHit, x, y, primitive.material.rIndex, depth+1);
+    calculateRefraction(newHit, x, y, primitive.material.rIndex, depth+1);
   }
 }
 
