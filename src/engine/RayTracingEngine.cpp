@@ -23,14 +23,15 @@ void RayTracingEngine::drawPass(HitPoint* hitPoint, Color3f& color, float rIndex
   }
   depth++;
 
+  Color3f tempColor(0, 0, 0);
   for (unsigned int l = 0; l < scene.lights.size(); l++) {
     Primitive& light = *(scene.lights[l]);
     double shade = calculateShadow(light, hitPoint->location);
     if (shade == 0) continue;
-    color += calculateDiffuse(hitPoint->primitive, light, hitPoint->location) * shade;
-    color += calculateSpecular(hitPoint, light) * shade;
+    tempColor += calculateDiffuse(hitPoint->primitive, light, hitPoint->location) * shade;
+    tempColor += calculateSpecular(hitPoint, light) * shade;
   }
-  color *= hitPoint->contribution;
+  color += tempColor * hitPoint->contribution;
 //  color += calculateReflection(hitPoint, rIndexPrev, depth);
 //  color += calculateRefraction(hitPoint, rIndexPrev, depth);
 }
