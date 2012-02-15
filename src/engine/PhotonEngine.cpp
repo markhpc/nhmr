@@ -7,11 +7,12 @@
 
 #include "PhotonEngine.h"
 
-PhotonEngine::PhotonEngine(int _width, int _height, double _photonHitRadius) :
+PhotonEngine::PhotonEngine(int _width, int _height, double _photonHitRadius, int _iteration) :
     Engine(_width, _height),
     photonMap(new SpatialHash(_photonHitRadius)),
     shadowMap(new SpatialHash(_photonHitRadius)),
-    specMap(new SpatialHash(_photonHitRadius)) {
+    specMap(new SpatialHash(_photonHitRadius)),
+    iteration(_iteration) {
   createPhotonMap();
 }
 
@@ -256,14 +257,16 @@ float PhotonEngine::halton(int id, int prime) {
   return h;
 }
 
-Color3f PhotonEngine::finalGather(HitPoint* hit) {
+Color3f PhotonEngine::finalGather(HitPoint* hit, int x, int y) {
   Color3f color(0, 0, 0);
   Vector3d position = hit->location;
   Vector3d normal = hit->primitive.getNormal(hit->location);
   int samples = Settings::instance()->samples;
   int hits = 0;
   int tries = 0;
-  int offset = rand();
+  int width = Settings::instance()->width;
+  int offset = halton(y*width + x, 5);
+//  int offset = iteration*samples + y*width + x;
   while (hits < samples && tries < 2 * samples) {
     Vector3d direction = getHaltonPointOnHalfSphere(tries+offset, 1);
 //    Vector3d direction = getRandomPointOnHalfSphere(1);
@@ -298,16 +301,16 @@ Color3f PhotonEngine::renderPixel(int x, int y) {
 //  for (unsigned int i = 0; i < hitPoints[x][y].size(); ++i) {
   int size = hitPoints[x][y].size();
   int max = std::min(size, 7);
-  for (unsigned int i = 0; i < max; ++i) {
+  for (unsigned int i = 0; i < size; ++i) {
     HitPoint* hitPoint = hitPoints[x][y][i];
     Color3f hitColor(0, 0, 0);
     if (Settings::instance()->finalGather) {
-      hitColor += finalGather(hitPoint);
+      hitColor += finalGather(hitPoint, x, y);
     }
     else {
-      shadowMap->drawHit(hitPoint, color);
+      shadowMap->drawHit(hitPoint, hitColor);
     }
-    specMap->drawHit(hitPoint, color);
+    specMap->drawHit(hitPoint, hitColor);
     color += hitColor * hitPoint->contribution;
 //    std::cout << "contribution: " << hitPoint->contribution.r << ", " << hitPoint->contribution.g << ", " << hitPoint->contribution.b << "\n";
   }

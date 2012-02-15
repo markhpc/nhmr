@@ -9,7 +9,7 @@
 
 Scene::Scene() {
   Primitive* primitive;
-
+/*
   // Ground Plane
   primitive = new PlanePrim(Vector3d(0, 1, 0), 4.4);
   primitive->name = "plane";
@@ -100,10 +100,10 @@ Scene::Scene() {
       primitives.push_back(primitive);
     }
   }
-
+*/
 
 // Cornell Box
-/*
+
   primitive = new Sphere(Vector3d(-1e5, 40.8, 81.6), 1e5);
   primitive->name = "left wall";
   primitive->material.color = Color3f(.75, .25, .25);
@@ -160,6 +160,7 @@ Scene::Scene() {
   primitive->name = "ball1";
   primitive->material.color = Color3f(.75, .75, .75);
   primitive->material.diffusion = 0.0;
+  primitive->material.specular = 1.0;
   primitive->material.reflection = 1.0;
   primitives.push_back(primitive);
 
@@ -175,6 +176,7 @@ Scene::Scene() {
   primitive->material.diffusion = 0.0;
   primitive->material.reflection = 0.2;
   primitive->material.refraction = 0.8;
+  primitive->material.specular = 0.2;
   primitive->material.rIndex = 1.52;
 //  primitive->material.reflection = 0.2;
 //  primitive->material.refraction = 0.8;
@@ -186,7 +188,7 @@ Scene::Scene() {
 //  primitive->light = true;
 //  primitive->material.color = Color3f(12, 12, 12);
 //  primitives.push_back(primitive);
-*/
+
 /*
   for (int i = 0; i < 500; i++) {
     Vector3d position = getHaltonPointOnHalfSphere(i, 12);

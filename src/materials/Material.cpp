@@ -10,10 +10,10 @@
 Material::Material() :
     color(Color3f(0.2f, 0.2f, 0.2f)),
     reflection(0),
-    specular(0.8),
+    specular(0),
     refraction(0),
-    rIndex(1.5),
-    diffusion(0.2) {
+    rIndex(1),
+    diffusion(0) {
 }
 
 Material::Material(Color3f _color, float _reflection, float _specular, float _refraction, float _rIndex, float _diffusion) :

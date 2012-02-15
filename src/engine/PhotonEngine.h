@@ -16,8 +16,9 @@ class PhotonEngine: public Engine {
   PhotonMap* photonMap;
   PhotonMap* shadowMap;
   PhotonMap* specMap;
+  int iteration;
 
-  PhotonEngine(int _width, int _height, double _photonHitRadius);
+  PhotonEngine(int _width, int _height, double _photonHitRadius, int _iteration);
   virtual ~PhotonEngine();
   void createPhotonMap();
   void russianRoulette(common::PhotonHit* photonHit, int iteration);
@@ -33,7 +34,7 @@ class PhotonEngine: public Engine {
   Vector3d getPointOnSphere(double radius, double theta, double z);
   Vector3d rotateVector(Vector3d vector, Vector3d normal1, Vector3d normal2);
   float halton(int id, int prime);
-  Color3f finalGather(HitPoint* hit);
+  Color3f finalGather(HitPoint* hit, int x, int y);
   Color3f finalGather2(HitPoint* hit);
   bool finalGatherHelper(HitPoint* hit, Vector3d direction, Color3f& color);
 };
