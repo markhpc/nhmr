@@ -116,12 +116,13 @@ void Engine::calculateReflection(HitPoint* hitPoint, int x, int y, float rIndexP
   int hitType = raytrace(ray, primId, tmpDistance);
   if (primId != -1) {
     Color3f contribution = hitPoint->contribution * primitive.material.color * reflection;
+//    std::cout << "contribution: " << contribution.r << ", " << contribution.g << ", " << contribution.b << "\n";
     Primitive& newPrim = *(scene.primitives[primId]);
     intersectionPoint = ray.origin + tmpDistance * ray.direction;
     HitPoint* newHit = new HitPoint(intersectionPoint, ray, hitType, newPrim, contribution);
     hitPoints[x][y].push_back(newHit);
-    calculateReflection(newHit, x, y, primitive.material.rIndex, depth+1);
-    calculateRefraction(newHit, x, y, primitive.material.rIndex, depth+1);
+    calculateReflection(newHit, x, y, rIndexPrev, depth+1);
+    calculateRefraction(newHit, x, y, rIndexPrev, depth+1);
   }
 }
 
@@ -151,8 +152,10 @@ void Engine::calculateRefraction(HitPoint* hitPoint, int x, int y, float rIndexP
 
   int hitType = raytrace(ray, primId, tmpDistance);
   if (primId != -1) {
-    Color3f contribution = hitPoint->contribution * primitive.material.color * refraction;
     Primitive& newPrim = *(scene.primitives[primId]);
+//    Color3f absorbance = newPrim.material.color * 0.15 * -tmpDistance;
+//    Color3f transparency(exp(absorbance.r), exp(absorbance.b), exp(absorbance.g));
+    Color3f contribution = hitPoint->contribution * primitive.material.color * refraction;
     intersectionPoint = ray.origin + tmpDistance * ray.direction;
     HitPoint* newHit = new HitPoint(intersectionPoint, ray, hitType, newPrim, contribution);
     hitPoints[x][y].push_back(newHit);

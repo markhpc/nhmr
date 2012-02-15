@@ -10,13 +10,15 @@
 PhotonEngine::PhotonEngine(int _width, int _height, double _photonHitRadius) :
     Engine(_width, _height),
     photonMap(new SpatialHash(_photonHitRadius)),
-    shadowMap(new SpatialHash(_photonHitRadius)) {
+    shadowMap(new SpatialHash(_photonHitRadius)),
+    specMap(new SpatialHash(_photonHitRadius)) {
   createPhotonMap();
 }
 
 PhotonEngine::~PhotonEngine() {
   delete photonMap;
   delete shadowMap;
+  delete specMap;
 }
 
 void PhotonEngine::createPhotonMap() {
@@ -47,8 +49,10 @@ void PhotonEngine::createPhotonMap() {
   }
   photonMap->fluxWeight = 1.0 / tries;
   shadowMap->fluxWeight = 1.0 / tries;
+  specMap->fluxWeight = 1.0 / tries;
   photonMap->initDraw();
   shadowMap->initDraw();
+  specMap->initDraw();
   std::cout << "Created the photonMap, tries: " << tries << ", hits: " << hits << "\n";
 }
 
@@ -78,8 +82,10 @@ void PhotonEngine::russianRoulette(common::PhotonHit* photonHit, int iteration) 
 
     if (iteration == 0) {
       photonMap->add(photonHit);
-    } else {
+    } else if (photonHit->specular == 0){
       shadowMap->add(photonHit);
+    } else {
+      specMap->add(photonHit);
     }
 
     createShadowPhoton(photonHit, iteration);
@@ -276,7 +282,7 @@ Color3f PhotonEngine::finalGather(HitPoint* hit) {
 //  }
   color = (1.0/tries) * color;
 //  std::cout << "Final Color: " << color.r << ", " << color.g << ", " << color.b << "\n";
-  return color;
+  return color * hit->primitive.material.diffusion;
 }
 
 Color3f PhotonEngine::renderPixel(int x, int y) {
@@ -289,14 +295,21 @@ Color3f PhotonEngine::renderPixel(int x, int y) {
 //  photonMap->drawHit(hitPoint.get(), color);
   // If set, return finalGather rather than direct visualization of the photonMap.
 
-  for (unsigned int i = 0; i < hitPoints[x][y].size(); ++i) {
+//  for (unsigned int i = 0; i < hitPoints[x][y].size(); ++i) {
+  int size = hitPoints[x][y].size();
+  int max = std::min(size, 7);
+  for (unsigned int i = 0; i < max; ++i) {
     HitPoint* hitPoint = hitPoints[x][y][i];
     Color3f hitColor(0, 0, 0);
-    if (Settings::instance()->finalGather)
+    if (Settings::instance()->finalGather) {
       hitColor += finalGather(hitPoint);
-    else
+    }
+    else {
       shadowMap->drawHit(hitPoint, color);
+    }
+    specMap->drawHit(hitPoint, color);
     color += hitColor * hitPoint->contribution;
+//    std::cout << "contribution: " << hitPoint->contribution.r << ", " << hitPoint->contribution.g << ", " << hitPoint->contribution.b << "\n";
   }
   return color;
 }

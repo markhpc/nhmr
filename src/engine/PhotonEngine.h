@@ -15,6 +15,7 @@ class PhotonEngine: public Engine {
   public:
   PhotonMap* photonMap;
   PhotonMap* shadowMap;
+  PhotonMap* specMap;
 
   PhotonEngine(int _width, int _height, double _photonHitRadius);
   virtual ~PhotonEngine();

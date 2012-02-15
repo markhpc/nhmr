@@ -33,15 +33,14 @@ class PhotonMap {
         double distance = vector.norm();
         if (distance < photonHitRadius) {
           vector.normalize();
-          if (&(hitPoint->primitive) == &(photonHit->primitive)) {
-//            tempColor += (1 - distance / photonHitRadius) * photonHit->color;
-            tempColor += photonHit->color;
+          float dot = photonHit->direction.dot(hitPoint->primitive.getNormal(photonHit->location));
+          if (dot < 0) {
+            tempColor += photonHit->color * -dot * photonHit->primitive.material.diffusion;
           }
         }
         ++lower;
       }
       double weight = 16 * fluxWeight;
-//      return tempColor * (3.0 / (pi * photonHitRadius * photonHitRadius)) * weight;
       return tempColor * (1.0 / (pi * photonHitRadius * photonHitRadius)) * weight;
     }
 };
