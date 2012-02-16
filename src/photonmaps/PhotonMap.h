@@ -32,10 +32,12 @@ class PhotonMap {
         Vector3d vector = photonHit->location - hitPoint->location;
         double distance = vector.norm();
         if (distance < photonHitRadius) {
-          vector.normalize();
-          float dot = photonHit->direction.dot(hitPoint->primitive.getNormal(photonHit->location));
-          if (dot < 0) {
-            tempColor += photonHit->color * -dot * photonHit->primitive.material.diffusion;
+//          Vector3d direction = photonHit->direction.normalized();
+          Vector3d direction = photonHit->primitive.getNormal(photonHit->location);
+          float dot = direction.dot(hitPoint->primitive.getNormal(photonHit->location));
+          if (dot > 0) {
+//            std::cout << "dot: " << dot << "\n";
+            tempColor += dot * photonHit->color * photonHit->primitive.material.diffusion;
           }
         }
         ++lower;

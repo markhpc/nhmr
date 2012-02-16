@@ -101,11 +101,11 @@ void PhotonEngine::russianRoulette(common::PhotonHit* photonHit, int iteration) 
 
 void PhotonEngine::createShadowPhoton(common::PhotonHit* photonHit, int iteration) {
   // short circuit if we've reached the max iterations;
-  if (iteration > 3) return;
+  if (iteration > 0) return;
   double distance = 1000000;
   Vector3d primNormal = photonHit->primitive.getNormal(photonHit->location);
   Vector3d zAxis(0, 0, 1);
-  Vector3d direction = getRandomPointOnSphere(1);
+  Vector3d direction = getRandomPointOnHalfSphere(1);
   direction = rotateVector(direction, zAxis, primNormal);
   Ray ray(photonHit->location + direction*epsilon, direction);
   int primId = -1;
@@ -120,7 +120,7 @@ void PhotonEngine::createShadowPhoton(common::PhotonHit* photonHit, int iteratio
 
 void PhotonEngine::reflectPhoton(common::PhotonHit* photonHit, int iteration) {
   // short circuit if we've reached the max iterations;
-  if (iteration > 3) return;
+  if (iteration > 0) return;
   Vector3d N = photonHit->primitive.getNormal(photonHit->location);
   Vector3d R = photonHit->direction - 2 * photonHit->direction.dot(N) * N;
   Ray ray = Ray(photonHit->location + R * epsilon, R);
@@ -137,7 +137,7 @@ void PhotonEngine::reflectPhoton(common::PhotonHit* photonHit, int iteration) {
 
 void PhotonEngine::refractPhoton(common::PhotonHit* photonHit, int iteration) {
   // short circuit if we've reached the max iterations;
-  if (iteration > 3) return;
+  if (iteration > 0) return;
 
   double rIndex = photonHit->primitive.material.rIndex;
   double n = photonHit->oldPrimitive.material.rIndex / rIndex;
@@ -257,33 +257,30 @@ float PhotonEngine::halton(int id, int prime) {
   return h;
 }
 
-Color3f PhotonEngine::finalGather(HitPoint* hit, int x, int y) {
+Color3f PhotonEngine::finalGather(HitPoint* hit, int rand) {
   Color3f color(0, 0, 0);
   Vector3d position = hit->location;
   Vector3d normal = hit->primitive.getNormal(hit->location);
   int samples = Settings::instance()->samples;
   int hits = 0;
-  int tries = 0;
-  int width = Settings::instance()->width;
-  int offset = halton(y*width + x, 5);
-//  int offset = iteration*samples + y*width + x;
-  while (hits < samples && tries < 2 * samples) {
-    Vector3d direction = getHaltonPointOnHalfSphere(tries+offset, 1);
+  int offset = rand + iteration*samples;
+  while (hits < samples) {
+    Vector3d direction = getHaltonPointOnHalfSphere(hits+offset, 1);
 //    Vector3d direction = getRandomPointOnHalfSphere(1);
     direction = rotateVector(direction, Vector3d(0, 0, 1), normal);
-    if (finalGatherHelper(hit, direction, color)) ++hits;
-    else {
+    finalGatherHelper(hit, direction, color);
+//    else {
 //      std::cout << "location:  x: " << hit.location.x() << " y: " << hit.location.y() << " z: " << hit.location.z() << "\n";
 //      std::cout << "normal:    x: " << normal.x() << " y: " << normal.y() << " z: " << normal.z() << "\n";
 //      std::cout << "direction: x: " << direction.x() << " y: " << direction.y() << " z: " << direction.z() << "\n";
-    }
-    ++tries;
+//    }
+    hits++;
   }
 //  if (tries > 2.0 * hits) {
 //    std::cout << "samples: " << samples << ", tries: " << tries << ", hits: " << hits << "\n";
 //    std::cout << "normal: x: " << normal.x() << " y: " << normal.y() << " z: " << normal.z() << "\n";
 //  }
-  color = (1.0/tries) * color;
+  color = (1.0/samples) * color;
 //  std::cout << "Final Color: " << color.r << ", " << color.g << ", " << color.b << "\n";
   return color * hit->primitive.material.diffusion;
 }
@@ -299,13 +296,16 @@ Color3f PhotonEngine::renderPixel(int x, int y) {
   // If set, return finalGather rather than direct visualization of the photonMap.
 
 //  for (unsigned int i = 0; i < hitPoints[x][y].size(); ++i) {
+  int width = Settings::instance()->width;
+  int height = Settings::instance()->height;
   int size = hitPoints[x][y].size();
-  int max = std::min(size, 7);
   for (unsigned int i = 0; i < size; ++i) {
     HitPoint* hitPoint = hitPoints[x][y][i];
     Color3f hitColor(0, 0, 0);
     if (Settings::instance()->finalGather) {
-      hitColor += finalGather(hitPoint, x, y);
+      int rand = width * height * halton(x+y*width, 3);
+//      std::cout << "rand: " << rand << "\n";
+      hitColor += finalGather(hitPoint, rand);
     }
     else {
       shadowMap->drawHit(hitPoint, hitColor);
