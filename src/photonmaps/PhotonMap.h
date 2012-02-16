@@ -42,7 +42,7 @@ class PhotonMap {
         }
         ++lower;
       }
-      double weight = 16 * fluxWeight;
+      double weight = 4 * pi * fluxWeight;
       return tempColor * (1.0 / (pi * photonHitRadius * photonHitRadius)) * weight;
     }
 };

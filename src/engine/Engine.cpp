@@ -97,7 +97,6 @@ void Engine::initRender(Vector3d position, Vector3d target) {
       }
     }
   }
-//  createPhotonMap();
 }
 
 void Engine::calculateReflection(HitPoint* hitPoint, int x, int y, float rIndexPrev, int depth) {

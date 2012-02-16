@@ -101,12 +101,24 @@ void PhotonEngine::russianRoulette(common::PhotonHit* photonHit, int iteration) 
 
 void PhotonEngine::createShadowPhoton(common::PhotonHit* photonHit, int iteration) {
   // short circuit if we've reached the max iterations;
-  if (iteration > 0) return;
+  if (iteration > 3) return;
   double distance = 1000000;
   Vector3d primNormal = photonHit->primitive.getNormal(photonHit->location);
   Vector3d zAxis(0, 0, 1);
-  Vector3d direction = getRandomPointOnHalfSphere(1);
-  direction = rotateVector(direction, zAxis, primNormal);
+  Vector3d direction = getDiffuseVector(primNormal);
+//  while (direction.dot(primNormal) < 0) {
+//    std::cout << "primNormal: " << primNormal.x() << ", " << primNormal.y() << ", " << primNormal.z();
+//    std::cout << " direction: " << direction.x() << ", " << direction.y() << ", " << direction.z() << "\n";
+//    direction = getRandomPointOnSphere(1);
+//  }
+//  direction = rotateVector(direction, zAxis, primNormal);
+
+  if (direction.dot(primNormal) < 0) {
+    std::cout << "uh oh, the primNormal and random ray bounce are going in opposite directions.\n";
+  }
+//  std::cout << "primNormal: " << primNormal.x() << ", " << primNormal.y() << ", " << primNormal.z();
+//  std::cout << " direction: " << direction.x() << ", " << direction.y() << ", " << direction.z() << "\n";
+
   Ray ray(photonHit->location + direction*epsilon, direction);
   int primId = -1;
 
@@ -120,7 +132,7 @@ void PhotonEngine::createShadowPhoton(common::PhotonHit* photonHit, int iteratio
 
 void PhotonEngine::reflectPhoton(common::PhotonHit* photonHit, int iteration) {
   // short circuit if we've reached the max iterations;
-  if (iteration > 0) return;
+  if (iteration > 3) return;
   Vector3d N = photonHit->primitive.getNormal(photonHit->location);
   Vector3d R = photonHit->direction - 2 * photonHit->direction.dot(N) * N;
   Ray ray = Ray(photonHit->location + R * epsilon, R);
@@ -137,7 +149,7 @@ void PhotonEngine::reflectPhoton(common::PhotonHit* photonHit, int iteration) {
 
 void PhotonEngine::refractPhoton(common::PhotonHit* photonHit, int iteration) {
   // short circuit if we've reached the max iterations;
-  if (iteration > 0) return;
+  if (iteration > 3) return;
 
   double rIndex = photonHit->primitive.material.rIndex;
   double n = photonHit->oldPrimitive.material.rIndex / rIndex;
@@ -182,23 +194,58 @@ Vector3d PhotonEngine::rotateVector(Vector3d vector, Vector3d normal1, Vector3d 
 }
 
 Vector3d PhotonEngine::getRandomPointOnSphere(double radius) {
+  double mult = 2 / (double) RAND_MAX;
+  while (true) {
+    Vector3d vector(1 - mult*rand(), 1 - mult*rand(), 1 - mult*rand());
+    if (vector.norm() <= 1) {
+      return vector*radius;
+    }
+  }
+}
+
+Vector3d PhotonEngine::getDiffuseVector(Vector3d normal) {
+  normal.normalize();
+  double mult = 2 / (double) RAND_MAX;
+  while (true) {
+    Vector3d vector(1 - mult*rand(), 1 - mult*rand(), 1 - mult*rand());
+    if (vector.norm() <= 1 && vector.dot(normal) > 0) {
+      return vector;
+    }
+  }
+}
+
+/*
+Vector3d PhotonEngine::getRandomPointOnSphere(double radius) {
   double mult = 2.0 / RAND_MAX;
   double theta = rand()*mult*pi; // 0 to 2pi
   double z = rand()*mult - 1;  // -1 to 1
   return getPointOnSphere(radius, theta, z);
 }
+*/
 
 Vector3d PhotonEngine::getHaltonPointOnSphere(int id, double radius) {
   double theta = 2.0 * pi * halton(id, 2);
   double z = 2.0 * halton(id, 3) - 1;
   return getPointOnSphere(radius, theta, z);
 }
-
+/*
 Vector3d PhotonEngine::getRandomPointOnHalfSphere(double radius) {
   double mult = 2.0 / RAND_MAX;
   double theta = rand()*mult*pi;
   double z = rand() / (float) RAND_MAX;
   return getPointOnSphere(radius, theta, z);
+}
+*/
+Vector3d PhotonEngine::getRandomPointOnHalfSphere(double radius) {
+  while (true) {
+    double x = radius * rand() / (double) RAND_MAX;
+    double y = radius * rand() / (double) RAND_MAX;
+    double z = radius * rand() / (double) RAND_MAX;
+
+    if (y > 0 && sqrt(x*x+y*y+z*z) < radius) {
+      return Vector3d(x, y, z);
+    }
+  }
 }
 
 Vector3d PhotonEngine::getHaltonPointOnHalfSphere(int id, double radius) {
@@ -265,6 +312,7 @@ Color3f PhotonEngine::finalGather(HitPoint* hit, int rand) {
   int hits = 0;
   int offset = rand + iteration*samples;
   while (hits < samples) {
+//    Vector3d direction = getDiffuseVector(normal);
     Vector3d direction = getHaltonPointOnHalfSphere(hits+offset, 1);
 //    Vector3d direction = getRandomPointOnHalfSphere(1);
     direction = rotateVector(direction, Vector3d(0, 0, 1), normal);
@@ -297,17 +345,18 @@ Color3f PhotonEngine::renderPixel(int x, int y) {
 
 //  for (unsigned int i = 0; i < hitPoints[x][y].size(); ++i) {
   int width = Settings::instance()->width;
-  int height = Settings::instance()->height;
   int size = hitPoints[x][y].size();
   for (unsigned int i = 0; i < size; ++i) {
     HitPoint* hitPoint = hitPoints[x][y][i];
     Color3f hitColor(0, 0, 0);
     if (Settings::instance()->finalGather) {
-      int rand = width * height * halton(x+y*width, 3);
+      int rand = RAND_MAX * halton(RAND_MAX * halton(x+y*width, 5), 7);
+//      int rand = 0;
 //      std::cout << "rand: " << rand << "\n";
       hitColor += finalGather(hitPoint, rand);
     }
     else {
+//      photonMap->drawHit(hitPoint, hitColor);
       shadowMap->drawHit(hitPoint, hitColor);
     }
     specMap->drawHit(hitPoint, hitColor);

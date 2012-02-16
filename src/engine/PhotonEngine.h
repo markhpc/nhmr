@@ -27,6 +27,7 @@ class PhotonEngine: public Engine {
   void createShadowPhoton(common::PhotonHit* photonHit, int iteration);
   void reflectPhoton(common::PhotonHit* photonHit, int iteration);
   void refractPhoton(common::PhotonHit* photonHit, int iteration);
+  Vector3d getDiffuseVector(Vector3d normal);
   Vector3d getRandomPointOnSphere(double radius);
   Vector3d getHaltonPointOnSphere(int id, double radius);
   Vector3d getRandomPointOnHalfSphere(double radius);

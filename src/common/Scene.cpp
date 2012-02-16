@@ -106,7 +106,7 @@ Scene::Scene() {
 
   primitive = new Sphere(Vector3d(-1e5, 40.8, 81.6), 1e5);
   primitive->name = "left wall";
-  primitive->material.color = Color3f(.75, .25, .25);
+  primitive->material.color = Color3f(1, .75, .75);
 //  primitive->material.color = Color3f(0, 0, 0);
   primitive->material.diffusion = 1.0;
   primitives.push_back(primitive);
@@ -114,7 +114,7 @@ Scene::Scene() {
   primitive = new Sphere(Vector3d(1e5+100, 40.8, 81.6), 1e5);
   primitive->name = "right wall";
 //  primitive->material.color = Color3f(0, 0, 0);
-  primitive->material.color = Color3f(.25, .25, .75);
+  primitive->material.color = Color3f(.75, .75, 1);
   primitive->material.diffusion = 1.0;
   primitives.push_back(primitive);
 
@@ -158,7 +158,7 @@ Scene::Scene() {
 
   primitive = new Sphere(Vector3d(26, 24, 100.6), 12);
   primitive->name = "ball1";
-  primitive->material.color = Color3f(.75, .75, .75);
+  primitive->material.color = Color3f(1, 1, 1);
   primitive->material.diffusion = 0.0;
   primitive->material.specular = 1.0;
   primitive->material.reflection = 1.0;
@@ -166,7 +166,7 @@ Scene::Scene() {
 
   primitive = new Sphere(Vector3d(50, 24, 100.6), 12);
   primitive->name = "ball2";
-  primitive->material.color = Color3f(.25, .75, .25);
+  primitive->material.color = Color3f(.75, 1, .75);
   primitive->material.diffusion = 1.0;
   primitives.push_back(primitive);
 
