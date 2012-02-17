@@ -9,13 +9,14 @@
 
 Scene::Scene() {
   Primitive* primitive;
-/*
+
   // Ground Plane
   primitive = new PlanePrim(Vector3d(0, 1, 0), 4.4);
   primitive->name = "plane";
   primitive->material.reflection = 0;
   primitive->material.refraction = 0;
   primitive->material.diffusion = 1;
+  primitive->material.specular = 0.8;
   primitive->material.color = Color3f(0.4, 0.3, 0.3);
   primitives.push_back(primitive);
 
@@ -28,6 +29,7 @@ Scene::Scene() {
   primitive->material.reflection = 0.2;
   primitive->material.refraction = 0.8;
   primitive->material.rIndex = 1.3;
+  primitive->material.specular = 0.8;
   primitive->material.color = Color3f(0.7, 0.7, 1.0);
   primitives.push_back(primitive);
 
@@ -40,6 +42,7 @@ Scene::Scene() {
   primitive->material.refraction = 0.0;
   primitive->material.rIndex = 1.3;
   primitive->material.diffusion = 0.1;
+  primitive->material.specular = 0.8;
   primitive->material.color = Color3f(0.7, 0.7, 1.0);
   primitives.push_back(primitive);
 
@@ -64,6 +67,9 @@ Scene::Scene() {
   primitive->name = "extra sphere";
   primitive->material.reflection = 0.0;
   primitive->material.refraction = 0.8;
+  primitive->material.diffusion = 0.2;
+  primitive->material.specular = 0.8;
+  primitive->material.rIndex = 1.5;
   primitive->material.color = Color3f(1.0, 0.4, 0.4);
   primitives.push_back(primitive);
 
@@ -100,8 +106,8 @@ Scene::Scene() {
       primitives.push_back(primitive);
     }
   }
-*/
 
+/*
 // Cornell Box
 
   primitive = new Sphere(Vector3d(-1e5, 40.8, 81.6), 1e5);
@@ -152,7 +158,7 @@ Scene::Scene() {
   primitive = new Sphere(Vector3d(50, 83.6, 81.6), 6);
   primitive->name = "light";
   primitive->light = true;
-  primitive->material.color = Color3f(5000, 5000, 5000);
+  primitive->material.color = Color3f(2500, 2500, 2500);
 //  primitives.push_back(primitive);
   lights.push_back(primitive);
 
